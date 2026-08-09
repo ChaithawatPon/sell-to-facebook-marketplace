@@ -8,5 +8,5 @@ This repository contains one reviewed, redistributable skill package.
 - Keep install guidance truthful: a documented install path must leave the installed skill able to resolve its production dependencies.
 - Treat every new example, fixture, and comment as public material.
 - Run `python3 scripts/validate-skills.py .` before publishing changes.
-- Run `npm test --prefix sell-to-facebook-marketplace` after changing package code or instructions.
+- Run `npm test --prefix ./sell-to-facebook-marketplace` after changing package code or instructions.
 - Use `python3 scripts/install-skill.py sell-to-facebook-marketplace --dest <directory>` for additive installs only.

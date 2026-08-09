@@ -46,7 +46,7 @@ Current public scope is the standard Facebook Marketplace `Item for sale` flow o
 
 ```bash
 python3 scripts/validate-skills.py .
-npm test --prefix sell-to-facebook-marketplace
+npm test --prefix ./sell-to-facebook-marketplace
 ```
 
 ## Privacy boundary
