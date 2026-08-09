@@ -1,8 +1,8 @@
 {
   "name": "sell-to-facebook-marketplace",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
-  "description": "Public-safe Facebook Marketplace seller workflow skill with explicit publish gates",
+  "description": "Public-safe Facebook Marketplace item seller workflow skill with preview-bound publish gates",
   "type": "module",
   "main": "scripts/facebook_marketplace_autopilot.mjs",
   "scripts": {

@@ -12,102 +12,79 @@ const CATEGORIES = JSON.parse(
 )
 
 const CONDITIONS = ['Like New', 'Excellent', 'Good', 'Fair', 'For Parts or Not Working']
+const SUPPORTED_LISTING_TYPES = ['item']
 
 /**
- * Analyze image metadata to guess item type and condition.
- * This is a simple heuristic; real image analysis would be more sophisticated.
+ * Collect non-claim evidence about the provided image set.
  */
-export function analyzeImages(imagePaths, imageFolderPath = '') {
+export function analyzeImages(imagePaths) {
   if (!imagePaths || imagePaths.length === 0) {
-    return { type: 'unknown', condition: 'Good', colors: [] }
+    return { imageCount: 0, imageFileNames: [] }
   }
-
-  // In a real implementation, this would analyze actual image content.
-  // For now, we use filename heuristics and return reasonable defaults.
-  const types = new Map()
-  ;[...imagePaths, imageFolderPath].forEach((p) => {
-    const basename = path.basename(p).toLowerCase()
-    if (basename.includes('laptop') || basename.includes('computer') || basename.includes('pc')) types.set('computer', 1)
-    if (basename.includes('phone') || basename.includes('mobile')) types.set('phone', 1)
-    if (basename.includes('chair') || basename.includes('table') || basename.includes('desk')) types.set('furniture', 1)
-    if (basename.includes('book')) types.set('book', 1)
-    if (basename.includes('toy')) types.set('toy', 1)
-    if (basename.includes('shirt') || basename.includes('pants') || basename.includes('dress')) types.set('clothing', 1)
-    if (basename.includes('bag') || basename.includes('handbag') || basename.includes('purse')) types.set('bag', 1)
-  })
-
-  const detectedType = types.size > 0 ? Array.from(types.keys())[0] : 'item'
 
   return {
-    type: detectedType,
-    condition: 'Good',
-    colors: [],
+    imageCount: imagePaths.length,
+    imageFileNames: imagePaths.map((imagePath) => path.basename(imagePath)),
   }
 }
 
-/**
- * Determine Facebook Marketplace category from detected item type.
- */
-export function guessCategory(detectedType) {
-  const typeMap = {
-    computer: ['Electronics', 'Computers'],
-    phone: ['Electronics', 'Mobile Phones'],
-    furniture: ['Home', 'Furniture'],
-    book: ['Books', 'Books'],
-    toy: ['Toys', 'Toys & Games'],
-    clothing: ['Fashion', 'Clothing'],
-    bag: ['Fashion', 'Handbags'],
-  }
-
-  if (typeMap[detectedType]) {
-    return typeMap[detectedType].join(' > ')
-  }
-
-  return 'Electronics > Other'
+function normalizeString(value) {
+  return String(value || '').trim()
 }
 
-/**
- * Generate a title from the detected type and condition.
- */
-export function generateTitle(detectedType, condition, price) {
-  const adjective = condition === 'Like New' ? 'like new' : condition.toLowerCase()
-  const typeNames = {
-    computer: 'laptop/computer',
-    phone: 'smartphone',
-    furniture: 'furniture',
-    book: 'book',
-    toy: 'toy',
-    clothing: 'clothing item',
-    bag: 'leather bag',
-    item: 'item',
+export function validateMetadata(metadata) {
+  const errors = []
+  const normalized = metadata && typeof metadata === 'object'
+    ? {
+        listingType: normalizeString(metadata.listingType || 'item').toLowerCase(),
+        title: normalizeString(metadata.title),
+        category: normalizeString(metadata.category),
+        condition: normalizeString(metadata.condition),
+        description: normalizeString(metadata.description),
+      }
+    : null
+
+  if (!normalized) {
+    return { isValid: false, errors: ['metadata must be a JSON object'] }
+  }
+  if (!SUPPORTED_LISTING_TYPES.includes(normalized.listingType)) {
+    errors.push(`listingType must be one of: ${SUPPORTED_LISTING_TYPES.join(', ')}`)
+  }
+  if (!normalized.title) errors.push('metadata.title is required')
+  if (!normalized.category) errors.push('metadata.category is required')
+  if (!normalized.condition) errors.push('metadata.condition is required')
+  if (!normalized.description) errors.push('metadata.description is required')
+  if (normalized.condition && !CONDITIONS.includes(normalized.condition)) {
+    errors.push(`metadata.condition must be one of: ${CONDITIONS.join(', ')}`)
   }
 
-  const name = typeNames[detectedType] || 'item'
-  const title = `${name} in ${adjective} condition`
-
-  // Capitalize first letter
-  return title.charAt(0).toUpperCase() + title.slice(1)
+  return {
+    isValid: errors.length === 0,
+    errors,
+    metadata: normalized,
+  }
 }
 
-/**
- * Generate a description from item type and price.
- */
-export function generateDescription(detectedType, condition, price, numPhotos) {
-  const phrases = {
-    computer: `Selling my personal laptop/computer. All working perfectly. ${numPhotos} photos showing condition.`,
-    phone: `Selling my personal smartphone. All working perfectly. No cracks or damage. ${numPhotos} photos included.`,
-    furniture: `Selling a piece of furniture. In ${condition.toLowerCase()} condition. All working/structurally sound. ${numPhotos} photos.`,
-    book: `Selling a book in ${condition.toLowerCase()} condition. See photos for details.`,
-    toy: `Selling a toy/game. In ${condition.toLowerCase()} condition. All pieces included. ${numPhotos} photos.`,
-    clothing: `Selling clothing item in ${condition.toLowerCase()} condition. Clean and ready to wear. ${numPhotos} photos.`,
-    bag: `Selling a leather bag in ${condition.toLowerCase()} condition. See the photos for its details and condition. ${numPhotos} photos included.`,
-    item: `Selling an item in ${condition.toLowerCase()} condition. See ${numPhotos} photos for details.`,
+export function loadMetadataFile(metadataPath) {
+  if (!metadataPath) {
+    throw new Error('Metadata file is required. Pass --metadata <path-to-json> with evidence-backed title, category, condition, and description.')
+  }
+  if (!fs.existsSync(metadataPath)) {
+    throw new Error(`Metadata file not found: ${metadataPath}`)
   }
 
-  return (
-    phrases[detectedType] ||
-    `Selling an item in ${condition.toLowerCase()} condition. ${numPhotos} photos included.`
-  )
+  let raw
+  try {
+    raw = JSON.parse(fs.readFileSync(metadataPath, 'utf8'))
+  } catch (error) {
+    throw new Error(`Could not parse metadata JSON: ${error.message}`)
+  }
+
+  const validation = validateMetadata(raw)
+  if (!validation.isValid) {
+    throw new Error(`Metadata validation failed:\n${validation.errors.join('\n')}`)
+  }
+  return validation.metadata
 }
 
 function prepareHeicImages(imageFolderPath, files) {
@@ -165,6 +142,9 @@ export function validateListing(listing) {
   if (!listing.title || listing.title.trim().length === 0) {
     errors.push('title is required and cannot be empty')
   }
+  if (!SUPPORTED_LISTING_TYPES.includes(listing.listingType)) {
+    errors.push(`listingType must be one of: ${SUPPORTED_LISTING_TYPES.join(', ')}`)
+  }
   if (!listing.category || listing.category.trim().length === 0) {
     errors.push('category is required')
   }
@@ -190,7 +170,7 @@ export function validateListing(listing) {
 /**
  * Draft a listing from image folder + price.
  */
-export function draftListing(imageFolderPath, price) {
+export function draftListing(imageFolderPath, price, metadata) {
   if (!fs.existsSync(imageFolderPath)) {
     throw new Error(`Image folder not found: ${imageFolderPath}`)
   }
@@ -218,23 +198,23 @@ export function draftListing(imageFolderPath, price) {
     throw new Error(`Invalid price: ${price}`)
   }
 
-  // Analyze images to guess item type
-  const analysis = analyzeImages(imagePaths, imageFolderPath)
-
-  // Generate listing fields
-  const category = guessCategory(analysis.type)
-  const condition = CONDITIONS[2] // Default to "Good"
-  const title = generateTitle(analysis.type, condition, numPrice)
-  const description = generateDescription(analysis.type, condition, numPrice, imagePaths.length)
+  const metadataValidation = validateMetadata(metadata)
+  if (!metadataValidation.isValid) {
+    throw new Error(`Metadata validation failed:\n${metadataValidation.errors.join('\n')}`)
+  }
+  const analysis = analyzeImages(imagePaths)
 
   const listing = {
-    title,
-    category,
-    condition,
-    description,
+    listingType: metadataValidation.metadata.listingType,
+    title: metadataValidation.metadata.title,
+    category: metadataValidation.metadata.category,
+    condition: metadataValidation.metadata.condition,
+    description: metadataValidation.metadata.description,
     price: numPrice,
     imagePaths,
     imageCount: imagePaths.length,
+    imageEvidence: analysis,
+    metadataSource: 'explicit',
     timestamp: new Date().toISOString(),
   }
 
@@ -256,6 +236,7 @@ export function formatListingForDisplay(listing) {
     'FACEBOOK MARKETPLACE LISTING DRAFT',
     '='.repeat(60),
     '',
+    `Listing type: ${listing.listingType}`,
     `Title:       ${listing.title}`,
     `Category:    ${listing.category}`,
     `Condition:   ${listing.condition}`,
@@ -274,4 +255,4 @@ export function formatListingForDisplay(listing) {
   return lines.join('\n')
 }
 
-export default { analyzeImages, guessCategory, generateTitle, generateDescription, draftListing, validateListing, formatListingForDisplay }
+export default { analyzeImages, draftListing, formatListingForDisplay, listValidCategories, listValidConditions, loadMetadataFile, validateListing, validateMetadata }

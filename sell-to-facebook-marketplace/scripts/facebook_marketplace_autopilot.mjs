@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Marketplace autopilot: auto-reply/follow-up plus stale-listing audit. */
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { join, resolve } from 'node:path'
 import { autoInbox } from './facebook_marketplace_inbox.mjs'
@@ -35,9 +35,14 @@ function assert(condition, message) {
 }
 
 async function runSelfTest() {
-  const path = await writeSummary({ ok: true }, { outputDir: '/private/tmp' })
-  assert(/autopilot-summary\.json$/.test(path), 'summary file path generation failed')
-  console.log('✓ facebook_marketplace_autopilot.mjs self-test passed')
+  const tempDir = await mkdtemp('/private/tmp/marketplace-autopilot-self-test-')
+  try {
+    const path = await writeSummary({ ok: true }, { outputDir: tempDir })
+    assert(/autopilot-summary\.json$/.test(path), 'summary file path generation failed')
+    console.log('✓ facebook_marketplace_autopilot.mjs self-test passed')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
 }
 
 const isMain = resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url))

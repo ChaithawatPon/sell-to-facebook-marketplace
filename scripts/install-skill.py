@@ -8,9 +8,20 @@ import shutil
 import sys
 from pathlib import Path
 
+IGNORED_NAMES = {
+    ".DS_Store",
+    "node_modules",
+    "output",
+    "state",
+}
+
 
 def contains_symlink(path: Path) -> bool:
-    return any(item.is_symlink() for item in path.rglob("*"))
+    return any(item.is_symlink() for item in path.rglob("*") if not any(part in IGNORED_NAMES for part in item.parts))
+
+
+def ignore_runtime_dirs(_directory: str, names: list[str]) -> set[str]:
+    return {name for name in names if name in IGNORED_NAMES}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -39,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: refusing to overwrite existing target: {target}", file=sys.stderr)
         return 3
 
-    shutil.copytree(source, target, symlinks=False)
+    shutil.copytree(source, target, symlinks=False, ignore=ignore_runtime_dirs)
     print(target)
     return 0
 

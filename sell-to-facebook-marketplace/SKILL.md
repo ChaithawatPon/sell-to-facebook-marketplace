@@ -1,6 +1,6 @@
 ---
 name: sell-to-facebook-marketplace
-description: Create, update, and manage Facebook Marketplace seller listings, including drafting new listings from photos and price, scanning seller inbox conversations, sending tightly-scoped safe buyer replies or one-time follow-ups, and reviewing stale listings for relisting. Use when a user wants seller-side Marketplace help. Publishing, public listing changes, and deletion still require fresh explicit approval each run.
+description: Create, update, and manage Facebook Marketplace seller item listings, including preparing new item listings from photos, price, and explicit evidence-backed metadata, scanning seller inbox conversations, sending tightly-scoped safe buyer replies or one-time follow-ups, and reviewing stale listings for relisting. Use when a user wants seller-side Marketplace item help. Publishing, public listing changes, and deletion still require fresh explicit approval each run.
 ---
 
 # Sell to Facebook Marketplace
@@ -9,13 +9,13 @@ Seller-side Facebook Marketplace automation with a hard publish gate.
 
 The package supports three main modes:
 
-1. Draft a new listing from a photo folder and price.
+1. Draft a new item listing from a photo folder, price, and explicit metadata JSON.
 2. Scan or auto-handle seller inbox threads when the latest buyer message can be answered safely from visible evidence.
 3. Audit active listings for low engagement and write a relisting review plan.
 
 ## Safety model
 
-- New listing publication always requires an explicit per-run `yes` at the final confirmation prompt.
+- New listing publication always requires an explicit per-run `yes` after Facebook's own preview is visible immediately before the final Publish button.
 - Seller inbox automation is limited to verified seller-side threads, evidence-backed answers, and one follow-up after at least 24 hours of buyer silence.
 - Inventory review is non-destructive. It can recommend relisting work, but it does not delete, repost, or mark listings sold.
 - Runtime state lives in local `state/` and `output/` directories created at run time and excluded from version control.
@@ -38,18 +38,16 @@ When the user invokes the skill without a narrower subtask, run:
 
 ## Listing draft workflow
 
-Use this when the user wants to create a listing from photos.
+Use this when the user wants to create an item listing.
 
 1. Start at `https://www.facebook.com/marketplace/create`.
-2. Choose the correct listing type:
-   - `Item for sale` for ordinary products
-   - `Vehicle for sale` for cars or motorcycles
-   - `Home for sale or rent` for property
+2. Use the `Item for sale` flow only. This public package does not currently support Vehicle or Home listing routes.
 3. Attach photos through Facebook's upload flow and confirm the clearest full-item photo is first.
-4. Draft title, category, condition, and description from the photo folder and price.
+4. Supply explicit metadata JSON for title, category, condition, and description. The draft helper will not infer claims from filenames or image names.
 5. Fill the live form with accurate text only. Use relevant Thai and English search terms; never pad with unrelated keywords.
-6. Show the drafted result and wait for a fresh approval prompt.
-7. Publish only if the operator types `yes` in that process run.
+6. Advance to Facebook's own preview step immediately before the final Publish button.
+7. Show the draft plus Facebook preview snapshot and wait for a fresh approval prompt.
+8. Publish only if the operator types `yes` in that process run while that preview is on screen.
 
 ## Inbox workflow
 
@@ -95,6 +93,7 @@ Use selling-page audit mode for active listings.
 
 - Facebook's `More details` panel can fail to expand after redraws. Focus the button and press Enter if a pointer click is unreliable.
 - The final creation flow can show both `Next` and `View next image`. Match the exact accessible name `Next` so the script never advances the photo carousel by mistake.
+- If the script cannot reach Facebook's own preview page and final `Publish` button for the standard item flow, it must abort rather than ask for approval early.
 
 ## Commands
 
@@ -107,8 +106,8 @@ npm install
 # Default autopilot: inbox automation + stale listing audit
 node scripts/facebook_marketplace_autopilot.mjs
 
-# Draft a listing from a photo folder and price
-node scripts/facebook_marketplace_draft.mjs <image-folder> <price>
+# Draft an item listing from a photo folder, price, and explicit metadata JSON
+node scripts/facebook_marketplace_draft.mjs <image-folder> <price> --metadata references/listing_metadata.example.json
 
 # Confirm and publish the latest draft
 node scripts/facebook_marketplace_publish.mjs
@@ -139,6 +138,6 @@ sell-to-facebook-marketplace/
 ## Guardrails summary
 
 - No API keys and no third-party Marketplace API usage.
-- No auto-publish without a fresh in-process confirmation.
+- No auto-publish without a fresh in-process confirmation bound to Facebook's live preview step.
 - No auto-negotiation, holds, reservations, status changes, or guessed item facts.
 - No committed browser state, cookies, screenshots, message logs, or real listing data.

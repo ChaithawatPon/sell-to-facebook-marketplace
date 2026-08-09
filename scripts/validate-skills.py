@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 
+IGNORED_PARTS = {".git", "__pycache__", "node_modules", "output", "state"}
 REQUIRED_ROOT_DOCS = {
     "README.md", "LICENSE", "AGENTS.md", "CLAUDE.md", "CODEX.md",
     "CONTEXT.md", "SKILLS.md",
@@ -57,7 +58,7 @@ def rel(root: Path, path: Path) -> str:
 
 
 def ignored(path: Path) -> bool:
-    return ".git" in path.parts or "__pycache__" in path.parts
+    return any(part in IGNORED_PARTS for part in path.parts)
 
 
 def package_paths(root: Path, errors: list[str]) -> list[Path]:
@@ -76,7 +77,7 @@ def package_paths(root: Path, errors: list[str]) -> list[Path]:
             for item in child.iterdir():
                 # A package may be a git submodule (its own repo): skip the
                 # submodule bookkeeping files it carries.
-                if item.name in {".git", ".gitignore", ".gitmodules"}:
+                if item.name in {".git", ".gitignore", ".gitmodules"} | IGNORED_PARTS:
                     continue
                 if item.name not in PACKAGE_CHILDREN:
                     add(errors, f"unapproved package child: {rel(root, item)}")
@@ -182,7 +183,8 @@ def main(argv: list[str] | None = None) -> int:
     if not packages:
         add(errors, "no skill packages found")
     for package in packages:
-        if list(package.rglob("SKILL.md")) != [package / "SKILL.md"]:
+        skill_files = [path for path in package.rglob("SKILL.md") if not ignored(path)]
+        if skill_files != [package / "SKILL.md"]:
             add(errors, f"package must contain exactly one SKILL.md: {rel(root, package)}")
         try:
             validate_frontmatter(root, package, names, errors)

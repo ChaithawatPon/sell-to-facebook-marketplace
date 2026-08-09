@@ -1,10 +1,10 @@
 # Sell to Facebook Marketplace
 
-Public, portable skill package for seller-side Facebook Marketplace workflows.
+Public, portable skill package for seller-side Facebook Marketplace item workflows.
 
 The repository contains one installable skill package:
 
-- `sell-to-facebook-marketplace` — draft listings from a photo folder and price, scan seller inbox threads, send tightly-scoped safe replies/follow-ups, and audit stale listings for relisting review.
+- `sell-to-facebook-marketplace` — prepare item listings from a photo folder, price, and explicit evidence-backed metadata; scan seller inbox threads; send tightly-scoped safe replies/follow-ups; and audit stale listings for relisting review.
 
 ## What is included
 
@@ -21,11 +21,21 @@ The repository contains one installable skill package:
 ```bash
 git clone https://github.com/ChaithawatPon/sell-to-facebook-marketplace.git
 cd sell-to-facebook-marketplace
+python3 scripts/validate-skills.py .
 npm install --prefix sell-to-facebook-marketplace
+python3 scripts/validate-skills.py .
 python3 scripts/install-skill.py sell-to-facebook-marketplace --dest "$HOME/.codex/skills"
 ```
 
 For Claude-style skill directories, replace `"$HOME/.codex/skills"` with `"$HOME/.claude/skills"`.
+
+The installer excludes runtime-only directories such as `node_modules/`, `output/`, and `state/`, so the documented order above remains safe after `npm install`.
+
+## Draft metadata
+
+New listing drafts require explicit metadata JSON instead of filename-based inference. See [`sell-to-facebook-marketplace/references/listing_metadata.example.json`](sell-to-facebook-marketplace/references/listing_metadata.example.json).
+
+Current public scope is the standard Facebook Marketplace `Item for sale` flow only. Vehicle and Home listing flows are intentionally out of scope until they are implemented and tested.
 
 ## Verify
 
