@@ -1,0 +1,6 @@
+.DS_Store
+*.tgz
+
+sell-to-facebook-marketplace/node_modules/
+sell-to-facebook-marketplace/output/
+sell-to-facebook-marketplace/state/

@@ -1,0 +1,10 @@
+{
+  "Electronics": ["Computers", "Mobile Phones", "Cameras", "Video Game Consoles", "Audio Equipment"],
+  "Home": ["Furniture", "Household Items", "Kitchen & Dining", "Bedding", "Decor"],
+  "Fashion": ["Clothing", "Shoes", "Accessories", "Handbags", "Watches & Jewelry"],
+  "Sports": ["Sports Equipment", "Fitness & Exercise", "Outdoor Recreation"],
+  "Books": ["Books", "Educational Materials"],
+  "Toys": ["Toys & Games", "Baby Gear"],
+  "Vehicles": ["Cars", "Motorcycles", "Parts & Accessories"],
+  "Other": ["Other"]
+}

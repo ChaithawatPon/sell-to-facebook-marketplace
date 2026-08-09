@@ -1,0 +1,61 @@
+{
+  "name": "sell-to-facebook-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Public-safe Facebook Marketplace seller workflow skill with explicit publish gates",
+  "type": "module",
+  "main": "scripts/facebook_marketplace_autopilot.mjs",
+  "scripts": {
+    "verify:no-api": "node scripts/verify_no_api.mjs",
+    "self-test": "node scripts/facebook_marketplace_draft.mjs --self-test && node scripts/facebook_marketplace_publish.mjs --self-test && node scripts/facebook_marketplace_inbox.mjs --self-test && node scripts/facebook_marketplace_inventory.mjs --self-test && node scripts/facebook_marketplace_autopilot.mjs --self-test",
+    "autopilot": "node scripts/facebook_marketplace_autopilot.mjs",
+    "draft": "node scripts/facebook_marketplace_draft.mjs",
+    "publish": "node scripts/facebook_marketplace_publish.mjs",
+    "inbox": "node scripts/facebook_marketplace_inbox.mjs --scan",
+    "inbox:auto": "node scripts/facebook_marketplace_inbox.mjs --auto",
+    "inbox:self-test": "node scripts/facebook_marketplace_inbox.mjs --self-test",
+    "inventory": "node scripts/facebook_marketplace_inventory.mjs --scan",
+    "inventory:self-test": "node scripts/facebook_marketplace_inventory.mjs --self-test",
+    "autopilot:self-test": "node scripts/facebook_marketplace_autopilot.mjs --self-test",
+    "draft:self-test": "node scripts/facebook_marketplace_draft.mjs --self-test",
+    "publish:self-test": "node scripts/facebook_marketplace_publish.mjs --self-test",
+    "test": "npm run verify:no-api && node --test tests/*.mjs"
+  },
+  "keywords": [
+    "facebook",
+    "marketplace",
+    "listings",
+    "seller-tools",
+    "items",
+    "sell",
+    "browser automation"
+  ],
+  "author": "Chaithawat Pon <273792464+ChaithawatPon@users.noreply.github.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChaithawatPon/sell-to-facebook-marketplace.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChaithawatPon/sell-to-facebook-marketplace/issues"
+  },
+  "homepage": "https://github.com/ChaithawatPon/sell-to-facebook-marketplace#readme",
+  "files": [
+    "SKILL.md",
+    "agents",
+    "lib",
+    "references",
+    "scripts",
+    "tests",
+    "package.json",
+    "package-lock.json",
+    ".gitignore"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}
