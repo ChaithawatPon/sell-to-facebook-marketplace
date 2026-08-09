@@ -100,9 +100,6 @@ Use selling-page audit mode for active listings.
 From the installed skill directory:
 
 ```bash
-# Install dependencies once
-npm install
-
 # Default autopilot: inbox automation + stale listing audit
 node scripts/facebook_marketplace_autopilot.mjs
 
@@ -124,6 +121,8 @@ node scripts/facebook_marketplace_inventory.mjs --scan
 # Run package self-tests
 npm test
 ```
+
+If the package was installed via this repository's `scripts/install-skill.py`, production dependencies are already installed in the destination. Only manual copies need a separate `npm ci`.
 
 ## Runtime layout
 

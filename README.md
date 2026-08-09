@@ -22,14 +22,19 @@ The repository contains one installable skill package:
 git clone https://github.com/ChaithawatPon/sell-to-facebook-marketplace.git
 cd sell-to-facebook-marketplace
 python3 scripts/validate-skills.py .
-npm install --prefix sell-to-facebook-marketplace
-python3 scripts/validate-skills.py .
 python3 scripts/install-skill.py sell-to-facebook-marketplace --dest "$HOME/.codex/skills"
 ```
 
 For Claude-style skill directories, replace `"$HOME/.codex/skills"` with `"$HOME/.claude/skills"`.
 
-The installer excludes runtime-only directories such as `node_modules/`, `output/`, and `state/`, so the documented order above remains safe after `npm install`.
+The installer copies the package without runtime directories such as `node_modules/`, `output/`, and `state/`, then runs `npm ci --omit=dev` inside the installed destination. If dependency installation fails, the installer removes the incomplete target instead of leaving a broken skill behind.
+
+Optional post-install verification from the installed skill directory:
+
+```bash
+cd "$HOME/.codex/skills/sell-to-facebook-marketplace"
+node --input-type=module -e "const { chromium } = await import('playwright'); console.log(typeof chromium.launch)"
+```
 
 ## Draft metadata
 
