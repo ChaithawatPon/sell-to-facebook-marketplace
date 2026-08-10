@@ -23,7 +23,7 @@ async function runAutopilot() {
     ranAt: new Date().toISOString(),
     inbox,
     inventory,
-    maintenanceNote: 'Inbox replies/follow-ups were sent automatically only for verified seller threads. Selling-page maintenance is reported as a relisting plan; public delete/relist actions remain review-gated.',
+    maintenanceNote: 'Inbox replies/follow-ups were sent automatically only for verified seller threads. Selling-page maintenance is reported as a review plan only; the one-listing maintenance preview is never invoked by autopilot and public changes require fresh exact approval.',
   }
   summary.summaryPath = await writeSummary(summary)
   console.log(JSON.stringify(summary, null, 2))

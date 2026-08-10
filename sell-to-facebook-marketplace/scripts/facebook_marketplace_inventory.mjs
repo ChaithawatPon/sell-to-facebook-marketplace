@@ -13,6 +13,36 @@ function normalize(value) {
   return String(value || '').replace(/\s+/g, ' ').trim()
 }
 
+function canonicalizeMarketplaceListingUrl(rawUrl) {
+  try {
+    const url = new URL(String(rawUrl || ''), 'https://www.facebook.com')
+    const hostname = url.hostname.toLowerCase()
+    if (hostname !== 'facebook.com' && !hostname.endsWith('.facebook.com')) return null
+    const match = url.pathname.match(/^\/marketplace\/item\/(\d+)(?:\/|$)/)
+    if (!match) return null
+    return `https://www.facebook.com/marketplace/item/${match[1]}/`
+  } catch {
+    return null
+  }
+}
+
+function extractMarketplaceListingIdentity(urlCandidates) {
+  const urls = [...new Set((urlCandidates || []).map(canonicalizeMarketplaceListingUrl).filter(Boolean))]
+  if (urls.length !== 1) {
+    return {
+      listingId: null,
+      listingUrl: null,
+      identityStatus: urls.length > 1 ? 'ambiguous' : 'missing',
+    }
+  }
+  const listingUrl = urls[0]
+  return {
+    listingId: listingUrl.match(/\/item\/(\d+)\//)[1],
+    listingUrl,
+    identityStatus: 'verified',
+  }
+}
+
 function parseThaiPrice(raw) {
   const match = normalize(raw).match(/฿\s*([\d,]+)/)
   return match ? Number(match[1].replace(/,/g, '')) : null
@@ -72,7 +102,22 @@ async function openSellingPage(page) {
 async function collectSellingCards(page, now = new Date()) {
   const rawCards = await page.evaluate(() => {
     const normalizeInner = (value) => String(value || '').replace(/\s+/g, ' ').trim()
+    const findListingUrls = (node) => {
+      let current = node
+      let ambiguous = []
+      for (let depth = 0; current && depth < 7; depth += 1) {
+        const anchors = []
+        if (current.matches?.('a[href*="/marketplace/item/"]')) anchors.push(current)
+        anchors.push(...current.querySelectorAll('a[href*="/marketplace/item/"]'))
+        const urls = [...new Set(anchors.map((anchor) => anchor.href || anchor.getAttribute('href')).filter(Boolean))]
+        if (urls.length === 1) return urls
+        if (urls.length > 1) ambiguous = urls
+        current = current.parentElement
+      }
+      return ambiguous
+    }
     const labeled = Array.from(document.querySelectorAll('[aria-label]')).map((node) => ({
+      node,
       ariaLabel: node.getAttribute('aria-label') || '',
       text: normalizeInner(node.textContent),
     }))
@@ -82,6 +127,7 @@ async function collectSellingCards(page, now = new Date()) {
         title: node.ariaLabel,
         text: node.text,
         relatedLabels: labeled.filter((candidate) => candidate.ariaLabel.endsWith(` ${node.ariaLabel}`) || candidate.ariaLabel === node.ariaLabel).map((candidate) => candidate.ariaLabel),
+        listingUrlCandidates: findListingUrls(node.node),
       }))
   })
 
@@ -92,7 +138,9 @@ async function collectSellingCards(page, now = new Date()) {
     const statusMatch = text.match(/(In stock|Active|Pending|Out of stock|Sold|No longer available)\s*·\s*Listed on/i)
     const tipMatch = text.match(/Tip:\s*([^฿]+?)(?=฿|In stock|Active|Pending|Out of stock|Sold|No longer available)/i)
     const listedDate = listedOnMatch ? parseMonthDay(listedOnMatch[1], now) : null
+    const identity = extractMarketplaceListingIdentity(card.listingUrlCandidates)
     return {
+      ...identity,
       title: card.title,
       text,
       price: parseThaiPrice(text),
@@ -131,6 +179,8 @@ async function scanSellingInventory({ minClicks = 10, maxAgeDays = 7, writePlanF
           ...card,
           stale: recommendation.stale,
           recommendedAction: recommendation.action,
+          maintenanceEligible: card.identityStatus === 'verified',
+          maintenanceBlocker: card.identityStatus === 'verified' ? null : `listing identity is ${card.identityStatus}`,
           staleReasons: recommendation.reasons,
           relistingSuggestions: inferRelistingSuggestions(card),
         }
@@ -172,6 +222,10 @@ async function runSelfTest() {
   const action = recommendAction({ clicks: 0, ageDays: 126, canDeleteAndRelist: true, tip: 'Renew your listing?' }, { minClicks: 10, maxAgeDays: 7 })
   assert(action.stale && action.action === 'delete_and_relist_review', 'stale relist recommendation failed')
   assert(parseThaiPrice('฿5,000฿6,300') === 5000, 'price parsing failed')
+  const identity = extractMarketplaceListingIdentity(['/marketplace/item/123456/?ref=share'])
+  assert(identity.listingId === '123456' && identity.identityStatus === 'verified', 'listing identity extraction failed')
+  assert(extractMarketplaceListingIdentity([]).identityStatus === 'missing', 'missing identity must fail closed')
+  assert(extractMarketplaceListingIdentity(['/marketplace/item/1/', '/marketplace/item/2/']).identityStatus === 'ambiguous', 'ambiguous identity must fail closed')
   console.log('✓ facebook_marketplace_inventory.mjs self-test passed')
 }
 
@@ -182,4 +236,11 @@ if (isMain) {
   else console.error('Usage: facebook_marketplace_inventory.mjs --scan | --self-test')
 }
 
-export { collectSellingCards, parseMonthDay, scanSellingInventory }
+export {
+  canonicalizeMarketplaceListingUrl,
+  collectSellingCards,
+  extractMarketplaceListingIdentity,
+  parseMonthDay,
+  recommendAction,
+  scanSellingInventory,
+}

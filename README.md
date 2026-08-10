@@ -4,7 +4,7 @@ Public, portable skill package for seller-side Facebook Marketplace item workflo
 
 The repository contains one installable skill package:
 
-- `sell-to-facebook-marketplace` — prepare item listings from a photo folder, price, and explicit evidence-backed metadata; scan seller inbox threads; send tightly-scoped safe replies/follow-ups; and audit stale listings for relisting review.
+- `sell-to-facebook-marketplace` — prepare item listings from explicit evidence, handle tightly-scoped seller inbox work, audit stale inventory, and preview/approval-gate one update, delete, or delete-and-relist action with post-action verification rules.
 
 ## What is included
 
@@ -41,6 +41,18 @@ node --input-type=module -e "const { chromium } = await import('playwright'); co
 New listing drafts require explicit metadata JSON instead of filename-based inference. See [`sell-to-facebook-marketplace/references/listing_metadata.example.json`](sell-to-facebook-marketplace/references/listing_metadata.example.json).
 
 Current public scope is the standard Facebook Marketplace `Item for sale` flow only. Vehicle and Home listing flows are intentionally out of scope until they are implemented and tested.
+
+## Stale-listing maintenance
+
+The inventory scan remains read-only. It captures a canonical listing ID/URL when one unique Marketplace item link is visible and marks missing or ambiguous identities ineligible for maintenance.
+
+To act, copy [`sell-to-facebook-marketplace/references/maintenance_packet.example.json`](sell-to-facebook-marketplace/references/maintenance_packet.example.json), replace all fake identity/content and timestamps with current evidence (the packet may live for at most 30 minutes), then run:
+
+```bash
+node sell-to-facebook-marketplace/scripts/facebook_marketplace_maintenance.mjs --packet /path/to/maintenance-packet.json
+```
+
+The command validates the packet and live listing, displays and refreshes the pre-action snapshot, and accepts only the exact token `approve <packet_id> <listing_id> <action>` in that same process. It contains no public-action click path: apply the approved action manually in the open Facebook window, then type the exact verification phrase within five minutes. The same process reloads Facebook and writes a local `verified`, `verification_failed`, or `verification_cancelled` outcome. Autopilot never invokes maintenance, and the package provides no flag, environment variable, or stored-state approval bypass.
 
 ## Verify
 

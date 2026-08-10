@@ -1,4 +1,4 @@
 interface:
   display_name: "Facebook Marketplace Seller"
-  short_description: "Draft listings and manage seller-side inbox work safely"
-  default_prompt: "Use $sell-to-facebook-marketplace to draft a listing, review stale inventory, or handle seller-side Marketplace inbox threads."
+  short_description: "Draft, audit, and safely maintain Marketplace listings"
+  default_prompt: "Use $sell-to-facebook-marketplace to draft a listing, handle seller inbox work, audit stale inventory, or preview and approval-gate one listing update, delete, or delete-and-relist action before manual application and reload verification."

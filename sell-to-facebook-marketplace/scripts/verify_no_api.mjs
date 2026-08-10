@@ -34,6 +34,7 @@ function main() {
     'scripts/facebook_marketplace_draft.mjs',
     'scripts/facebook_marketplace_inbox.mjs',
     'scripts/facebook_marketplace_inventory.mjs',
+    'scripts/facebook_marketplace_maintenance.mjs',
     'scripts/facebook_marketplace_autopilot.mjs',
     'scripts/facebook_marketplace_publish.mjs',
     'lib/marketplace_draft.mjs',

@@ -10,6 +10,7 @@ const scripts = [
   ['scripts/facebook_marketplace_publish.mjs', '--self-test'],
   ['scripts/facebook_marketplace_inbox.mjs', '--self-test'],
   ['scripts/facebook_marketplace_inventory.mjs', '--self-test'],
+  ['scripts/facebook_marketplace_maintenance.mjs', '--self-test'],
   ['scripts/facebook_marketplace_autopilot.mjs', '--self-test'],
 ]
 
